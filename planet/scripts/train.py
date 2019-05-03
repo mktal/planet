@@ -108,6 +108,7 @@ if __name__ == '__main__':
       help='Whether to resume unfinished runs in the log directory.')
   args_, remaining = parser.parse_known_args()
   args_.params = tools.AttrDict(yaml.safe_load(args_.params.replace('#', ',')))
+  print(args_.params)
   args_.logdir = args_.logdir and os.path.expanduser(args_.logdir)
   remaining.insert(0, sys.argv[0])
   tf.app.run(lambda _: main(args_), remaining)

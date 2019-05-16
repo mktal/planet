@@ -81,10 +81,15 @@ def _data_processing(config, params):
   config.batch_shape = params.get('batch_shape', (50, 50))
   config.num_chunks = params.get('num_chunks', 1)
   image_bits = params.get('image_bits', 5)
-  config.preprocess_fn = tools.bind(
-      tools.preprocess.preprocess, bits=image_bits)
-  config.postprocess_fn = tools.bind(
-      tools.preprocess.postprocess, bits=image_bits)
+  no_preprocess = params.get('no_preprocess', False)
+  if no_preprocess:
+    config.preprocess_fn = tools.preprocess.no_op
+    config.postprocess_fn = tools.preprocess.no_op
+  else:
+    config.preprocess_fn = tools.bind(
+        tools.preprocess.preprocess, bits=image_bits)
+    config.postprocess_fn = tools.bind(
+        tools.preprocess.postprocess, bits=image_bits)
   config.open_loop_context = 5
   config.data_reader = tools.numpy_episodes.episode_reader
   config.data_loader = {
@@ -295,7 +300,12 @@ def _define_simulation(
         horizon=horizon)
   else:
     raise NotImplementedError(planner)
+  env_wrapper = None
+  if params.get('sim_env_wrapper', False):
+    from environments.continuous_pricing_envs import UseScoreAsReward
+    env_wrapper = UseScoreAsReward
   return tools.AttrDict(
+      env_wrapper=env_wrapper,
       task=task,
       num_agents=batch_size,
       planner=planner_fn,

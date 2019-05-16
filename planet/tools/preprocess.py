@@ -19,6 +19,10 @@ from __future__ import print_function
 import tensorflow as tf
 
 
+def no_op(image):
+  return image
+
+
 def preprocess(image, bits):
   bins = 2 ** bits
   image = tf.to_float(image)

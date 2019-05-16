@@ -17,4 +17,6 @@ from __future__ import division
 from __future__ import print_function
 
 from . import conv_ha
+from . import conv_didi
+from . import fc_didi
 from .basic import feed_forward

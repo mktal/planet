@@ -25,7 +25,7 @@ from planet.training import define_summaries
 from planet.training import utility
 
 
-def define_model(data, trainer, config):
+def define_model(data, trainer, config, capture=None):
   tf.logging.info('Build TensorFlow compute graph.')
   dependencies = []
   cleanups = []
@@ -92,4 +92,6 @@ def define_model(data, trainer, config):
       grad_norms, step, config.print_metrics_every, 'grad_norms'))
   with tf.control_dependencies(dependencies):
     score = tf.identity(score)
+  if isinstance(capture, dict):
+    capture.update(locals())
   return score, summaries, cleanups

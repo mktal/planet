@@ -135,6 +135,14 @@ def gym_breakout(config, params):
   return Task('gym_breakout', env_ctor, max_length, state_components)
 
 
+def didi_pricing(config, params):
+  max_length = 100
+  state_components = ['reward']
+  env_ctor = functools.partial(
+      _didi_env, max_length, obs_is_image=params.get('obs_is_image', True))
+  return Task('didi_pricing', env_ctor, max_length, state_components)
+
+
 def _dm_control_env(
     action_repeat, max_length, domain, task, params, normalize=False,
     camera_id=None):
@@ -169,6 +177,28 @@ def _gym_env(action_repeat, min_length, max_length, name, obs_is_image=False):
   else:
     env = control.wrappers.ObservationDict(env, 'state')
   env = control.wrappers.PixelObservations(env, (64, 64), np.uint8, 'image')
+  env = control.wrappers.ConvertTo32Bit(env)
+  return env
+
+
+def _didi_env(max_length, obs_is_image=True):
+  from environments.pricing_envs import RegionalPricingEnv
+  from environments.continuous_pricing_envs import DiscreteToBoxPricingWrapper
+  env_kwargs = {
+      'max_time': 500,
+      'broadcast_distance': 1000,
+      'poisson_param': 7.0,
+      'max_num_drivers': 20,
+      'cancel_time': 5,
+      'num_pricing_events': 60,
+      'cold_region_prob': 0.0,
+      'speed': 0.1,
+  }
+
+  env = RegionalPricingEnv(**env_kwargs)
+  env = DiscreteToBoxPricingWrapper(env, as_image=obs_is_image)
+  env = control.wrappers.MaximumDuration(env, max_length)
+  env = control.wrappers.ObservationDict(env, 'image')
   env = control.wrappers.ConvertTo32Bit(env)
   return env
 

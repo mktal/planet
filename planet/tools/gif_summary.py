@@ -87,7 +87,7 @@ def py_gif_summary(tag, images, max_outputs, fps):
     raise ValueError("Tensor must be 5-D for gif summary.")
   batch_size, _, height, width, channels = images.shape
   if channels not in (1, 3):
-    raise ValueError("Tensors must have 1 or 3 channels for gif summary.")
+    raise ValueError("Tensors must have 1 or 3 channels for gif summary: %s." % images.shape)
   summ = tf.Summary()
   num_outputs = min(batch_size, max_outputs)
   for i in range(num_outputs):
@@ -141,6 +141,7 @@ def gif_summary(name, tensor, max_outputs, fps, collections=None, family=None):
     buffer.
   """
   tensor = tf.convert_to_tensor(tensor)
+  tensor = tensor[:, :, :, :, :3]
   if tensor.dtype in (tf.float32, tf.float64):
     tensor = tf.cast(255.0 * tensor, tf.uint8)
   with summary_op_util.summary_scope(

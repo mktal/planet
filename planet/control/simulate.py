@@ -48,10 +48,11 @@ def simulate(
       summaries.append(tf.summary.histogram('return_hist', return_))
       summaries.append(tf.summary.histogram('reward_hist', reward))
       summaries.append(tf.summary.histogram('action_hist', action))
-      summaries.append(tools.image_strip_summary(
-          'image', image, max_length=duration))
-      summaries.append(tools.gif_summary(
-          'animation', image, max_outputs=1, fps=20))
+      if agent_config.obs_is_image:
+        summaries.append(tools.image_strip_summary(
+            'image', image, max_length=duration))
+        summaries.append(tools.gif_summary(
+            'animation', image, max_outputs=1, fps=20))
   summary = tf.summary.merge(summaries)
   return summary, return_mean
 
@@ -82,7 +83,8 @@ def collect_rollouts(
       simulate_fn, tf.range(duration),
       initializer, parallel_iterations=1)
   score = tf.boolean_mask(score, done)
-  image = tf.transpose(image, [1, 0, 2, 3, 4])
+  if agent_config.obs_is_image:
+    image = tf.transpose(image, [1, 0, 2, 3, 4])
   action = tf.transpose(action, [1, 0, 2])
   reward = tf.transpose(reward)
   return score, image, action, reward

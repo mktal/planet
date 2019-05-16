@@ -231,10 +231,14 @@ def simulate_episodes(config, params, graph, expensive_summaries, name):
     if params.save_episode_dir:
       env = control.wrappers.CollectGymDataset(env, params.save_episode_dir)
     env = control.wrappers.ConcatObservation(env, ['image'])
+    if params.env_wrapper:
+      env = params.env_wrapper(env)
     return env
   cell = graph.cell
+  obs_is_image = params.task.env_ctor.keywords.get('obs_is_image', True)
   agent_config = tools.AttrDict(
       cell=cell,
+      obs_is_image=obs_is_image,
       encoder=graph.encoder,
       planner=params.planner,
       objective=functools.partial(params.objective, graph=graph),

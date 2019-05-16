@@ -127,6 +127,8 @@ def log_prob_summaries(dists, obs, mask, name='log_prob'):
 
 def image_summaries(dist, target, name='image', max_batch=10):
   summaries = []
+  if len(target.shape.as_list()) < 5:
+    return summaries
   with tf.variable_scope(name):
     empty_frame = 0 * target[:max_batch, :1]
     image = dist.mode()[:max_batch]
@@ -143,6 +145,7 @@ def image_summaries(dist, target, name='image', max_batch=10):
     frames = tf.concat([target, image], 2)
     # Stack batch entries horizontally.
     frames = tf.transpose(frames, [1, 2, 0, 3, 4])
+    frames = frames[:, :, :, :, :3]
     s = shapelib.shape(frames)
     frames = tf.reshape(frames, [s[0], s[1], s[2] * s[3], s[4]])
     summaries.append(gif_summary.gif_summary(

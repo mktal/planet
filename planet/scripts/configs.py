@@ -61,10 +61,15 @@ def _data_processing(config, params):
   config.batch_shape = params.get('batch_shape', (50, 50))
   config.num_chunks = params.get('num_chunks', 1)
   image_bits = params.get('image_bits', 5)
-  config.preprocess_fn = functools.partial(
-      tools.preprocess.preprocess, bits=image_bits)
-  config.postprocess_fn = functools.partial(
-      tools.preprocess.postprocess, bits=image_bits)
+  no_preprocess = params.get('no_preprocess', False)
+  if no_preprocess:
+    config.preprocess_fn = tools.preprocess.no_op
+    config.postprocess_fn = tools.preprocess.no_op
+  else:
+    config.preprocess_fn = functools.partial(
+        tools.preprocess.preprocess, bits=image_bits)
+    config.postprocess_fn = functools.partial(
+        tools.preprocess.postprocess, bits=image_bits)
   config.open_loop_context = 5
   return config
 
@@ -120,16 +125,16 @@ def _tasks(config, params):
 
 
 def _loss_functions(config, params):
-  config.free_nats = params.get('free_nats', 2.0)
+  config.free_nats = params.get('free_nats', 3.0)
   config.stop_os_posterior_gradient = True
   config.zero_step_losses.image = params.get('image_loss_scale', 1.0)
   config.zero_step_losses.divergence = params.get('divergence_scale', 1.0)
-  config.zero_step_losses.global_divergence = params.get('global_divergence_scale', 0.1)
+  config.zero_step_losses.global_divergence = params.get('global_divergence_scale', 0.0)
   config.zero_step_losses.reward = params.get('reward_scale', 10.0)
   config.overshooting = params.get('overshooting', config.batch_shape[1] - 1)
   config.overshooting_losses = config.zero_step_losses.copy(_unlocked=True)
   config.overshooting_losses.reward = params.get(
-      'overshooting_reward_scale', 100.0)
+      'overshooting_reward_scale', 0.0)
   del config.overshooting_losses['image']
   del config.overshooting_losses['global_divergence']
   config.optimizers = _define_optimizers(config, params)
@@ -219,16 +224,23 @@ def _active_collection(config, params):
   return sims
 
 
+def objective(state, graph):
+  return graph.heads['reward'](graph.cell.features_from_state(state)).mean()
+
+
 def _define_simulation(task, config, params, horizon, batch_size):
-  def objective(state, graph):
-    return graph.heads['reward'](graph.cell.features_from_state(state)).mean()
   planner = functools.partial(
       control.planning.cross_entropy_method,
       amount=params.get('cem_amount', 1000),
       topk=params.get('cem_topk', 100),
       iterations=params.get('cem_iterations', 10),
       horizon=horizon)
+  env_wrapper = None
+  if params.get('sim_env_wrapper', False):
+    from environments.continuous_pricing_envs import UseScoreAsReward
+    env_wrapper = UseScoreAsReward
   return tools.AttrDict(
+      env_wrapper=env_wrapper,
       task=task,
       num_agents=batch_size,
       planner=planner,

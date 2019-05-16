@@ -31,12 +31,15 @@ def image_strip_summary(name, images, max_length=100, max_batch=10):
   Returns:
     Summary string tensor.
   """
+  if len(images.shape.as_list()) < 5:
+    return tf.constant('')
   if max_batch:
     images = images[:max_batch]
   if max_length:
     images = images[:, :max_length]
   if images.dtype == tf.uint8:
     images = tf.to_float(images) / 255.0
+  images = images[:, :, :, :, :3]
   length, width = tf.shape(images)[1], tf.shape(images)[3]
   images = tf.transpose(images, [0, 2, 1, 3, 4])
   images = tf.reshape(images, [1, -1, length * width, 3])

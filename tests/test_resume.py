@@ -25,7 +25,7 @@ import tensorflow as tf
 
 
 # logdir = './logs/didi/00001'
-logdir = './logs/didi-default-v3/00001'
+logdir = './logs/didi-default-v12/00001'
 config = training.utility.load_config(logdir)
 
 tf.reset_default_graph()
@@ -49,7 +49,7 @@ for saver in config.savers:
 
 env_ctor = config.sim_collects['train-didi_pricing-cem-12'].task.env_ctor
 env = env_ctor()
-env = UseScoreAsReward(env)
+# env = UseScoreAsReward(env)
 env = control.wrappers.ConcatObservation(env, ['image'])
 env = control.batch_env.BatchEnv([env], True)
 
@@ -90,11 +90,11 @@ sess.run(begin_episode_op)
 obs = env.reset()
 action, _ = sess.run(perform_op, {observ: obs})
 state = sess.run(unroll_op)
-print(action, state)
-import ipdb; ipdb.set_trace()
+# print(action, state)
+# import ipdb; ipdb.set_trace()
 
 episodes = []
-num_episodes = 1
+num_episodes = 10
 for _ in range(num_episodes):
   policy = lambda obs: sess.run(perform_op, {observ: obs})[0]
   done = False
